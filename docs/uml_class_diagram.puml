@@ -1,0 +1,145 @@
+@startuml uml_class_diagram
+
+
+' =========================================================
+' Enums / Value Objects
+' =========================================================
+
+enum Environment {
+  DEV
+  STAGE
+  PROD
+}
+
+enum SnapshotType {
+  BEFORE
+  AFTER
+}
+
+enum Severity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+' =========================================================
+' Core Domain Entities
+' =========================================================
+
+class Service {
+  +id: int
+  +name: str
+}
+
+class PatchEvent {
+  +id: int
+  +service: Service
+  +environment: Environment
+  +ami_id: str
+  +patch_date: date
+  +notes: str
+  +current_state_code: str
+  +created_at: datetime
+  +updated_at: datetime
+
+  +compute_fixed_vulnerabilities(): List<Vulnerability>
+  +get_fixed_vulnerabilities_by_severity(severity: Severity): List<Vulnerability>
+  +transition_to(target_state_code: str): void
+  +generate_stage_cr_summary(): str
+  +generate_prod_cr_summary(): str
+}
+
+class ScanSnapshot {
+  +id: int
+  +patch_event: PatchEvent
+  +snapshot_type: SnapshotType
+  +created_at: datetime
+
+  +add_vulnerability(v: Vulnerability): void
+  +list_vulnerabilities(): List<Vulnerability>
+}
+
+class Vulnerability {
+  +id: int
+  +scan_snapshot: ScanSnapshot
+  +synthetic_id: str
+  +cve: str
+  +plugin_id: str
+  +severity: Severity
+  +host: str
+  +description: str
+
+  +is_same_as(other: Vulnerability): bool
+}
+
+' =========================================================
+' Persistence Layer
+' =========================================================
+
+class DatabaseSessionManager {
+  +connection_string: str
+  +get_session(): Session
+}
+
+class PatchEventRepository {
+  +get_by_id(id: int): PatchEvent
+  +list(service: Service, environment: Environment, state_code: str): List<PatchEvent>
+  +save(patch_event: PatchEvent): PatchEvent
+  +update(patch_event: PatchEvent): PatchEvent
+}
+
+class ScanSnapshotRepository {
+  +get_by_id(id: int): ScanSnapshot
+  +list_by_patch_event(patch_event_id: int): List<ScanSnapshot>
+  +save(scan_snapshot: ScanSnapshot): ScanSnapshot
+}
+
+class VulnerabilityRepository {
+  +list_by_snapshot(snapshot_id: int): List<Vulnerability>
+  +save_many(vulnerabilities: List<Vulnerability>): void
+}
+
+' =========================================================
+' State Pattern
+' =========================================================
+
+interface PatchState {
+  +name: str
+  +get_allowed_transitions(context: PatchEvent): List<str>
+  +can_transition_to(target_state_code: str, context: PatchEvent): bool
+  +on_enter(context: PatchEvent): void
+}
+
+class DevEvidenceCapturedState
+class DevVerifiedState
+class StageCrReadyState
+class StagePatchedState
+class ProdCrReadyState
+class ProdPatchedState
+class ClosedState
+
+class PatchStateFactory {
+  +from_code(code: str): PatchState
+}
+
+' =========================================================
+' Relationships
+' =========================================================
+
+Service "1" -- "0..*" PatchEvent
+PatchEvent "1" -- "0..*" ScanSnapshot
+ScanSnapshot "1" -- "0..*" Vulnerability
+
+PatchEvent "1" --> "1" PatchState : current_state
+PatchStateFactory --> PatchState
+
+DevEvidenceCapturedState -up-|> PatchState
+DevVerifiedState -up-|> PatchState
+StageCrReadyState -up-|> PatchState
+StagePatchedState -up-|> PatchState
+ProdCrReadyState -up-|> PatchState
+ProdPatchedState -up-|> PatchState
+ClosedState -up-|> PatchState
+
+@enduml
