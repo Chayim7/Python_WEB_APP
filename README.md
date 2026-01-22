@@ -174,6 +174,14 @@ All data is stored in a local SQLite file (`patch_tracker.db`) created automatic
   - Empty / "All" options return all events.
 - **Create Patch Event**
   - Click **"Create Patch Event"** to open the patch event detail form.
+  
+- **Summary stats**
+  - The top of the dashboard shows synthetic summary statistics:
+    - Total number of patch events
+    - Counts by environment (DEV/STAGE/PROD)
+    - Counts by lifecycle phase (DEV*, STAGE*, PROD*, CLOSED)
+  - These are derived from the same synthetic data stored in SQLite and are meant to
+    mimic the style of a production vulnerability/patch overview.
 
 ### 2. Creating a Patch Event
 
@@ -211,6 +219,13 @@ On a **Patch Event Detail** page (existing event):
     - If a BEFORE snapshot exists, chooses a random subset of its vulnerabilities
       to simulate **remaining issues**.
     - Otherwise, generates a smaller synthetic set.
+  - **Guardrails / UI gating**
+    - The **Generate AFTER** button is disabled until a BEFORE snapshot exists.
+    - The **Compute fixed vulnerabilities** button is disabled until **both**
+      BEFORE and AFTER snapshots exist.
+    - On the backend, the `generate-after` route also enforces that a BEFORE
+      snapshot must exist and will redirect with a message if called out of
+      order.
 
 ### 4. Computing Fixed Vulnerabilities (DEV Evidence)
 
@@ -258,6 +273,31 @@ Rules enforced:
 
 If an invalid transition is attempted, the app rolls back the change and shows an error message.
 
+### 6. Generating CR Summaries for STAGE / PROD
+
+Once DEV evidence has been computed for an event, you can generate **synthetic
+change request (CR) summaries**:
+
+- **STAGE CR summary**
+  - Available when:
+    - DEV evidence is available (`dev_evidence_available = True`), and
+    - Synthetic BEFORE and AFTER snapshots both exist.
+  - Action: click **"Generate STAGE CR summary"** on the detail page.
+  - Backend behavior:
+    - Recomputes fixed vulnerabilities and severity breakdown.
+    - Builds a STAGE CR text block using `app/services/cr_text.py`.
+    - Stores it on the patch event for display.
+
+- **PROD CR summary**
+  - Available only when the patch event is in one of the later lifecycle states
+    (e.g., `STAGE_PATCHED`, `PROD_CR_READY`, `PROD_PATCHED`, `CLOSED`).
+  - Also requires synthetic DEV evidence and both BEFORE and AFTER snapshots.
+  - Action: click **"Generate PROD CR summary"**.
+  - Backend behavior:
+    - Uses the same fixed vulnerability diff and severity counts as the STAGE CR.
+    - Generates PROD-ready text that assumes STAGE validation is complete and
+      PROD rollout is justified (still based on synthetic data).
+
 ---
 
 ## Generating Synthetic Data (Summary)
@@ -280,11 +320,14 @@ The project is intended to comply with **PEP 8** and the project requirements us
 
 - `black` for code formatting
 - `isort` for import sorting
-- `flake8` + `flake8-html` for linting (with `max-line-length = 119`)
+- `flake8` + `flake8-html` for linting (you can optionally configure a
+  `max-line-length`, for example `119`)
 
-### Sample .flake8 Configuration
+### Sample .flake8 Configuration (optional)
 
-Create a `.flake8` file at the project root with at least:
+If you want to customize flake8's defaults (for example, to relax line length
+to better align with your formatting preferences), create a `.flake8` file at
+the project root with at least:
 
 ```ini
 [flake8]
