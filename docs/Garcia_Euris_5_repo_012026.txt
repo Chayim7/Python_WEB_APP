@@ -1,0 +1,10 @@
+GitHub Repository – AMI Patch Evidence Tracker (Synthetic Data)
+
+Student: Euris Garcia
+Project: Develop a Software Program for Your Company Using Python
+Date: January 2026
+
+The complete application code and associated files are available in the
+following public GitHub repository:
+
+https://github.com/Chayim7/Python_WEB_APP

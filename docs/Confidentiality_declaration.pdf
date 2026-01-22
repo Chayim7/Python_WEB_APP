@@ -1,0 +1,38 @@
+CONFIDENTIALITY DECLARATION
+
+Project: Develop a Software Program for Your Company Using Python
+Student: Euris Garcia
+Date: January 2026
+
+I, the undersigned, Euris Garcia, hereby declare that:
+
+1. All information, examples, screenshots, and identifiers used in this project
+   have been reviewed to avoid disclosure of any confidential information
+   belonging to my employer, customers, partners, or any third party.
+
+2. The application “AMI Patch Evidence Tracker (Synthetic Data)” has been
+   intentionally designed to operate ONLY on synthetic, fake-but-realistic
+   data. It does not connect to any real DEV, STAGE, or PROD environment or
+   to any production tools, such as vulnerability scanners, ticketing systems,
+   or monitoring platforms.
+
+3. All CVEs, plugin IDs, hostnames, AMI IDs, IP addresses, and environment
+   names referenced in the application, documentation, and deliverables are
+   synthetic labels used exclusively for educational and demonstration
+   purposes.
+
+4. No proprietary source code, internal processes, architecture diagrams, or
+   non-public documentation from my employer or any third party have been
+   copied into this project.
+
+5. I understand that I remain responsible for respecting all confidentiality
+   and data protection obligations that apply to my professional environment
+   and that this project must not be used as a vehicle to disclose sensitive
+   or restricted information.
+
+Signed:
+
+______________________________
+Euris Garcia
+
+Date: ________________________
