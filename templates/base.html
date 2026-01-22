@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en" data-theme="night">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      {% block title %}AMI Patch Evidence Tracker (Synthetic Data){% endblock %}
+    </title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css"
+    />
+  </head>
+  <body class="min-h-screen bg-neutral-950 text-slate-100">
+    <div
+      class="navbar bg-neutral-950/95 border-b border-neutral-800 backdrop-blur shadow-lg"
+    >
+      <div class="flex-1 px-4">
+        <a href="/" class="text-xl font-semibold tracking-tight text-primary">
+          AMI Patch Evidence Tracker
+        </a>
+      </div>
+    </div>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10 mb-12">
+      <div class="space-y-4">
+        <div class="alert bg-neutral-900 border border-primary/40 shadow-md text-sm">
+          <span>
+            This application uses <span class="font-semibold">synthetic data only</span>.
+            It does <span class="font-semibold">not</span> connect to any real
+            environments, services, or production systems.
+          </span>
+        </div>
+
+        <section class="space-y-6">
+          {% block content %}{% endblock %}
+        </section>
+      </div>
+    </main>
+
+    <footer class="border-t border-neutral-800 bg-neutral-950/95">
+      <div
+        class="max-w-6xl mx-auto px-4 py-4 text-[0.7rem] text-slate-500 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <span>AMI Patch Evidence Tracker · Synthetic-data demo application</span>
+        <span>v0.1.0 · Built with FastAPI, SQLite, Tailwind CSS, and daisyUI</span>
+      </div>
+    </footer>
+  </body>
+</html>
+

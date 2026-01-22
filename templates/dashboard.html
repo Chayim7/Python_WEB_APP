@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - AMI Patch Evidence Tracker{% endblock %}
+
+{% block content %}
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    <h1 class="text-2xl font-semibold text-base-content">Patch Events Dashboard</h1>
+    <a href="/patch-events/new" class="btn btn-primary">Create Patch Event</a>
+  </div>
+
+  <section
+    class="stats bg-base-200 border border-base-300/60 shadow-xl mb-6 max-w-xl"
+  >
+    <div class="stat">
+      <div class="stat-title text-xs tracking-wide uppercase text-base-400">
+        Total patch events
+      </div>
+      <div class="stat-value text-primary">{{ total_events }}</div>
+      <div class="stat-desc text-xs text-base-400">
+        Across all services and environments
+      </div>
+    </div>
+  </section>
+
+  <form
+    method="get"
+    action="/"
+    class="card bg-base-200 border border-base-300/60 shadow-xl mb-6"
+  >
+    <div class="card-body grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div>
+        <label class="label"><span class="label-text">Service</span></label>
+        <select name="service_id" class="select select-bordered w-full">
+          <option value="">All Services</option>
+          {% for svc in services %}
+            <option
+              value="{{ svc.id }}"
+              {% if selected_service_id == svc.id %}selected{% endif %}
+            >
+              {{ svc.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="label"><span class="label-text">Environment</span></label>
+        <select name="environment" class="select select-bordered w-full">
+          <option value="">All Environments</option>
+          {% for env in environment_options %}
+            <option
+              value="{{ env }}"
+              {% if selected_environment == env %}selected{% endif %}
+            >
+              {{ env }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="label"><span class="label-text">State</span></label>
+        <select name="state" class="select select-bordered w-full">
+          <option value="">All States</option>
+          {% for s in state_options %}
+            <option
+              value="{{ s }}"
+              {% if selected_state == s %}selected{% endif %}
+            >
+              {{ s }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex items-end gap-2">
+        <button type="submit" class="btn btn-secondary w-full md:w-auto">
+          Apply filters
+        </button>
+        <a href="/" class="btn btn-ghost w-full md:w-auto">Clear</a>
+      </div>
+    </div>
+  </form>
+
+  <div class="card bg-base-200 border border-base-300/60 shadow-xl">
+    <div class="card-body p-0">
+      {% if patch_events %}
+        <div class="overflow-x-auto">
+          <table class="table table-zebra table-sm w-full">
+            <thead class="bg-neutral-900/80 text-[0.7rem] uppercase tracking-wide text-slate-400">
+              <tr>
+                <th>Service</th>
+                <th>Environment</th>
+                <th>AMI ID</th>
+                <th>Date</th>
+                <th>State</th>
+                <th class="text-right pr-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-neutral-800">
+              {% for event in patch_events %}
+                <tr class="hover:bg-neutral-900/60 transition-colors">
+                  <td>{{ event.service.name }}</td>
+                  <td>{{ event.environment.value }}</td>
+                  <td class="font-mono text-xs">{{ event.ami_id }}</td>
+                  <td>{{ event.patch_date }}</td>
+                  <td>
+                    <span
+                      class="badge badge-sm
+                        {% if event.current_state_code.startswith('DEV') %} badge-info
+                        {% elif event.current_state_code.startswith('STAGE') %} badge-warning
+                        {% elif event.current_state_code.startswith('PROD') %} badge-success
+                        {% elif event.current_state_code == 'CLOSED' %} badge-neutral
+                        {% else %} badge-outline{% endif %}"
+                    >
+                      {{ event.current_state_code }}
+                    </span>
+                  </td>
+                  <td class="text-right pr-4">
+                    <a
+                      href="/patch-events/{{ event.id }}"
+                      class="btn btn-sm btn-primary"
+                    >
+                      View
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="p-6">
+          <p class="text-sm text-base-content/70">
+            No patch events found. Try adjusting filters or create a new patch event.
+          </p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+
