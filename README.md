@@ -145,7 +145,7 @@ pip install black isort flake8 flake8-html
 From the project root (with the virtual environment activated):
 
 ```bash
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload
 ```
 
 Then open your browser at:
