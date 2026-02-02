@@ -2,17 +2,64 @@
 
 ## Project Purpose
 
-This application helps patch engineers track AMI-based patch events across environments (DEV  STAGE  PROD) and automatically derive **patch evidence** from synthetic vulnerability scan snapshots.
+This application helps patch engineers track AMI-based patch events across environments (DEV → STAGE → PROD) and automatically derive **patch evidence** from synthetic vulnerability scan snapshots.
 
 The main goals are to:
 
 - **Capture** patch events for specific services and environments.
 - **Generate** synthetic BEFORE and AFTER scan results (no real systems used).
 - **Compute** which vulnerabilities were fixed by a patch (DEV evidence).
+- **Analyze** vulnerability data with interactive charts, severity breakdowns, and exportable reports.
 - **Summarize** results in a format suitable for change requests (e.g., STAGE/PROD CR text).
 - **Enforce** a controlled promotion lifecycle using the **State Pattern**.
 
 This project is built to satisfy the OpenClassrooms workplace project requirements while strictly avoiding any interaction with real company environments or tools.
+
+---
+
+## Key Features
+
+### Modern UI/UX
+- **Animated backgrounds** with floating orbs and hex grid patterns
+- **Glassmorphism design** with blur effects and gradient borders
+- **3D card effects** with hover animations
+- **Responsive layout** optimized for desktop and mobile
+
+### Interactive Dashboard
+- **Real-time search** across all patch events
+- **Sortable columns** (click headers to sort)
+- **Pagination** with configurable page sizes (5, 10, 25, 50)
+- **View toggle** between table and card layouts
+- **Animated counters** for statistics
+- **Quick filters** by service, environment, and state
+
+### Vulnerability Analysis View
+- **Interactive charts** (Radar, Bar, Donut) with Chart.js
+- **Chart type switching** (Bar Line, Donut Polar)
+- **Tabbed vulnerability tables** (Fixed, Remaining, Before, After)
+- **Search and filter** vulnerabilities by severity
+- **Sortable tables** with column headers
+- **Export options** (CSV, JSON)
+- **Report generation** with severity scoring and risk assessment
+- **Copy to clipboard** and print functionality
+
+### Patch Event Detail
+- **Visual workflow tracker** showing scan progress (BEFORE → AFTER → Compute)
+- **Collapsible sections** for BEFORE, AFTER, and Fixed vulnerabilities
+- **Severity badges** with color-coded counts
+- **One-click CTA** to view full analysis when evidence is ready
+- **State transition controls** with validation
+
+### Keyboard Shortcuts
+- `N` - Create new patch event (Dashboard)
+- `D` - Go to Dashboard
+- `A` - Go to Analysis view
+- `?` - Show keyboard shortcuts help
+- `Esc` - Close modals
+
+### Toast Notifications
+- Real-time feedback for user actions
+- Non-intrusive slide-in animations
 
 ---
 
@@ -64,28 +111,29 @@ The application is safe to run in isolation: it only reads/writes a local SQLite
 ## Project Structure
 
 ```text
-project_6_wingsurf/
+AMI_Patch_Evidence_Tracker/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py              # FastAPI app entrypoint
-│   ├── database.py          # SQLite + SQLAlchemy configuration
-│   ├── models.py            # ORM models and enums
-│   ├── state.py             # State Pattern for patch lifecycle
+│   ├── main.py                 # FastAPI app entrypoint
+│   ├── database.py             # SQLite + SQLAlchemy configuration
+│   ├── models.py               # ORM models and enums
+│   ├── state.py                # State Pattern for patch lifecycle
 │   ├── services/
 │   │   ├── __init__.py
-│   │   ├── synthetic_data.py  # Synthetic scan generators
-│   │   └── diff.py            # Fixed vuln diff + severity counts
+│   │   ├── synthetic_data.py   # Synthetic scan generators
+│   │   ├── diff.py             # Fixed vuln diff + severity counts
+│   │   └── cr_text.py          # CR summary text generation
 │   └── web/
 │       ├── __init__.py
-│       └── routes.py        # Dashboard + patch event routes
+│       └── routes.py           # Dashboard + patch event + analysis routes
 ├── templates/
-│   ├── base.html            # Shared layout + synthetic data banner
-│   ├── dashboard.html       # Dashboard with filters and list
-│   └── patch_event_detail.html  # Patch event detail + evidence + lifecycle
-├── static/                  # Static assets (CSS/JS/images if needed)
-├── docs/                    # UML diagram and other documentation
-├── requirements.txt         # Runtime Python dependencies
-└── README.md                # This file
+│   ├── base.html               # Shared layout + synthetic data banner
+│   ├── dashboard.html          # Interactive dashboard with search/sort/pagination
+│   ├── patch_event_detail.html # Patch event detail + workflow + collapsible sections
+│   └── vulnerability_analysis.html  # Full analysis view with charts and reports
+├── static/                     # Static assets (CSS/JS/images if needed)
+├── requirements.txt            # Runtime Python dependencies
+└── README.md                   # This file
 ```
 
 ---
@@ -298,6 +346,43 @@ change request (CR) summaries**:
     - Generates PROD-ready text that assumes STAGE validation is complete and
       PROD rollout is justified (still based on synthetic data).
 
+### 7. Vulnerability Analysis View
+
+Once evidence is computed, click **"View Full Analysis"** to access the comprehensive vulnerability analysis dashboard:
+
+- **Summary Statistics**
+  - Animated counters showing BEFORE, AFTER, Fixed, and Remaining vulnerability counts
+  - Color-coded severity badges
+
+- **Interactive Charts**
+  - **Radar Chart**: Severity distribution comparison (Before vs After)
+  - **Bar/Line Chart**: Fixed vulnerabilities by severity (switchable)
+  - **Donut/Polar Chart**: Remaining vulnerabilities breakdown (switchable)
+
+- **Tabbed Vulnerability Tables**
+  - **Fixed**: Vulnerabilities remediated by the patch
+  - **Remaining**: Vulnerabilities still present after patching
+  - **Before**: Full BEFORE snapshot data
+  - **After**: Full AFTER snapshot data
+  - Each table supports:
+    - Real-time search filtering
+    - Severity filter buttons
+    - Sortable columns (click headers)
+
+- **Export Options**
+  - **CSV Export**: Download vulnerability data as CSV
+  - **JSON Export**: Download as JSON for programmatic use
+  - **Print**: Print-friendly view
+
+- **Report Generation**
+  - Click **"Generate Report"** to create a comprehensive vulnerability report
+  - Includes:
+    - Executive summary with risk score (0-100)
+    - Severity breakdown with counts and percentages
+    - Remediation effectiveness metrics
+    - Recommendations based on remaining vulnerabilities
+  - Copy to clipboard or print the report
+
 ---
 
 ## Generating Synthetic Data (Summary)
@@ -305,10 +390,12 @@ change request (CR) summaries**:
 You never need any real scan results. To exercise the workflow for a patch event:
 
 1. Create a new patch event (typically in **DEV**).
-2. On the detail page, click **"Generate BEFORE (synthetic)"**.
-3. Click **"Generate AFTER (synthetic)"**.
-4. Click **"Compute fixed vulnerabilities"** to mark DEV evidence and view fixed vulnerabilities.
-5. Use lifecycle transitions to conceptually "promote" that patch toward STAGE and PROD.
+2. On the detail page, click **"Gen"** under BEFORE Scan in the workflow tracker.
+3. Click **"Gen"** under AFTER Scan (unlocked after BEFORE is generated).
+4. Click **"Compute"** to calculate fixed vulnerabilities and mark DEV evidence.
+5. Click **"View Full Analysis"** to explore interactive charts and generate reports.
+6. Use lifecycle transitions to conceptually "promote" that patch toward STAGE and PROD.
+7. Generate CR summaries for STAGE and PROD environments.
 
 All CVEs, plugin IDs, AMIs, and hosts are **randomly generated synthetic values** that only exist inside this SQLite database.
 

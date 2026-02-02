@@ -12,6 +12,7 @@ from app.models import Environment, PatchEvent, Service, SnapshotType
 from app.services.cr_text import build_prod_cr_text, build_stage_cr_text
 from app.services.diff import (
     compute_fixed_vulnerabilities,
+    compute_remaining_vulnerabilities,
     count_by_severity,
     extract_before_after_vulnerabilities,
 )
@@ -212,6 +213,13 @@ def get_patch_event_detail(
 
     fixed_vulnerabilities: List = []
     severity_counts: Dict = {}
+    before_severity_counts: Dict = {}
+    after_severity_counts: Dict = {}
+
+    if before_vulns:
+        before_severity_counts = count_by_severity(before_vulns)
+    if after_vulns:
+        after_severity_counts = count_by_severity(after_vulns)
 
     if patch_event.dev_evidence_available and before_vulns and after_vulns:
         fixed_vulnerabilities = compute_fixed_vulnerabilities(
@@ -242,6 +250,10 @@ def get_patch_event_detail(
             # Evidence and diff outputs
             "before_count": before_count,
             "after_count": after_count,
+            "before_vulnerabilities": before_vulns,
+            "after_vulnerabilities": after_vulns,
+            "before_severity_counts": before_severity_counts,
+            "after_severity_counts": after_severity_counts,
             "fixed_vulnerabilities": fixed_vulnerabilities,
             "severity_counts": severity_counts,
             "dev_evidence_available": patch_event.dev_evidence_available,
@@ -520,3 +532,87 @@ def transition_state(
     )
     params = urlencode({"message": message})
     return RedirectResponse(url=f"{url}?{params}", status_code=303)
+
+
+@router.get(
+    "/patch-events/{patch_event_id}/analysis",
+    response_class=HTMLResponse,
+    name="vulnerability_analysis",
+)
+def vulnerability_analysis(
+    request: Request,
+    patch_event_id: int,
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    """Third screen: Vulnerability Analysis with interactive charts."""
+    from app.models import Severity
+
+    patch_event = (
+        db.query(PatchEvent)
+        .filter(PatchEvent.id == patch_event_id)
+        .first()
+    )
+    if patch_event is None:
+        raise HTTPException(status_code=404, detail="Patch event not found")
+
+    snapshots = list(patch_event.snapshots)
+    split = extract_before_after_vulnerabilities(snapshots)
+    before_vulns = split[SnapshotType.BEFORE]
+    after_vulns = split[SnapshotType.AFTER]
+
+    before_count = len(before_vulns)
+    after_count = len(after_vulns)
+
+    # Compute fixed and remaining vulnerabilities
+    fixed_vulns = compute_fixed_vulnerabilities(before_vulns, after_vulns)
+    remaining_vulns = compute_remaining_vulnerabilities(after_vulns)
+
+    fixed_count = len(fixed_vulns)
+    remaining_count = len(remaining_vulns)
+
+    # Calculate effectiveness percentage
+    effectiveness_pct = (
+        round((fixed_count / before_count) * 100)
+        if before_count > 0
+        else 0
+    )
+
+    # Severity counts for each category
+    before_severity = count_by_severity(before_vulns)
+    after_severity = count_by_severity(after_vulns)
+    fixed_severity = count_by_severity(fixed_vulns)
+    remaining_severity = count_by_severity(remaining_vulns)
+
+    def severity_to_dict(counts):
+        return {
+            "CRITICAL": counts.get(Severity.CRITICAL, 0),
+            "HIGH": counts.get(Severity.HIGH, 0),
+            "MEDIUM": counts.get(Severity.MEDIUM, 0),
+            "LOW": counts.get(Severity.LOW, 0),
+        }
+
+    return templates.TemplateResponse(
+        "vulnerability_analysis.html",
+        {
+            "request": request,
+            "patch_event": patch_event,
+            # Counts
+            "before_count": before_count,
+            "after_count": after_count,
+            "fixed_count": fixed_count,
+            "remaining_count": remaining_count,
+            "effectiveness_pct": effectiveness_pct,
+            # Vulnerability lists
+            "before_vulnerabilities": before_vulns,
+            "after_vulnerabilities": after_vulns,
+            "fixed_vulnerabilities": fixed_vulns,
+            "remaining_vulnerabilities": remaining_vulns,
+            # Severity counts for charts (as dicts)
+            "before_severity": severity_to_dict(before_severity),
+            "after_severity": severity_to_dict(after_severity),
+            "fixed_severity": severity_to_dict(fixed_severity),
+            "remaining_severity": severity_to_dict(remaining_severity),
+            # Severity counts with enum keys for template iteration
+            "fixed_severity_counts": fixed_severity,
+        },
+    )

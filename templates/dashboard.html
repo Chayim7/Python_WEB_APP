@@ -3,140 +3,886 @@
 {% block title %}Dashboard - AMI Patch Evidence Tracker{% endblock %}
 
 {% block content %}
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-    <h1 class="text-2xl font-semibold text-base-content">Patch Events Dashboard</h1>
-    <a href="/patch-events/new" class="btn btn-primary">Create Patch Event</a>
+<!-- Tippy.js for tooltips -->
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+
+<style>
+  /* Animated Background */
+  .animated-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+  }
+  
+  .animated-bg::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(59, 130, 246, 0.1) 0%, transparent 40%);
+    animation: bgPulse 15s ease-in-out infinite;
+  }
+  
+  @keyframes bgPulse {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(2%, 2%) scale(1.02); }
+    66% { transform: translate(-1%, 1%) scale(0.98); }
+  }
+
+  /* Floating orbs */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.4;
+    animation: orbFloat 20s ease-in-out infinite;
+  }
+  .orb-1 { width: 400px; height: 400px; background: #6366f1; top: 10%; left: 10%; animation-delay: 0s; }
+  .orb-2 { width: 300px; height: 300px; background: #8b5cf6; top: 60%; right: 10%; animation-delay: -5s; }
+  .orb-3 { width: 250px; height: 250px; background: #3b82f6; bottom: 10%; left: 30%; animation-delay: -10s; }
+  
+  @keyframes orbFloat {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(30px, -30px); }
+    50% { transform: translate(-20px, 20px); }
+    75% { transform: translate(20px, 30px); }
+  }
+
+  /* Grid pattern overlay */
+  .grid-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+      linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    animation: gridMove 20s linear infinite;
+  }
+  
+  @keyframes gridMove {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(50px, 50px); }
+  }
+
+  /* Glass card effect */
+  .glass-card {
+    background: rgba(30, 30, 45, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 16px;
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+  }
+  .glass-card:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 
+      0 12px 40px rgba(99, 102, 241, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+  }
+
+  /* Stat card 3D effect */
+  .stat-card-3d {
+    background: linear-gradient(145deg, rgba(30, 30, 45, 0.9), rgba(20, 20, 35, 0.9));
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 16px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .stat-card-3d::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6, #3b82f6);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .stat-card-3d:hover::before { opacity: 1; }
+  .stat-card-3d:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(99, 102, 241, 0.3);
+  }
+
+  /* Counter animation */
+  .counter-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Search input */
+  .search-glow {
+    background: rgba(20, 20, 35, 0.8);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+  }
+  .search-glow:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+    outline: none;
+  }
+
+  /* Table enhancements */
+  .enhanced-table {
+    border-collapse: separate;
+    border-spacing: 0 8px;
+  }
+  .enhanced-table thead th {
+    background: transparent;
+    padding: 12px 16px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    user-select: none;
+  }
+  .enhanced-table thead th:hover { color: #6366f1; }
+  .enhanced-table thead th.sorted-asc::after { content: ' ↑'; color: #22c55e; }
+  .enhanced-table thead th.sorted-desc::after { content: ' ↓'; color: #ef4444; }
+  
+  .enhanced-table tbody tr {
+    background: rgba(30, 30, 45, 0.5);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+  }
+  .enhanced-table tbody tr:hover {
+    background: rgba(99, 102, 241, 0.15);
+    transform: scale(1.01);
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.2);
+  }
+  .enhanced-table tbody td {
+    padding: 16px;
+    border: none;
+  }
+  .enhanced-table tbody td:first-child { border-radius: 12px 0 0 12px; }
+  .enhanced-table tbody td:last-child { border-radius: 0 12px 12px 0; }
+
+  /* State badges */
+  .state-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .state-dev { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+  .state-stage { background: rgba(251, 191, 36, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
+  .state-prod { background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
+  .state-closed { background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); }
+
+  /* Action buttons */
+  .action-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .action-btn-primary {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    border: none;
+  }
+  .action-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+  }
+  .action-btn-secondary {
+    background: rgba(99, 102, 241, 0.1);
+    color: #a5b4fc;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+  }
+  .action-btn-secondary:hover {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.5);
+  }
+
+  /* Toast notification */
+  .toast-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(99, 102, 241, 0.4);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    z-index: 1000;
+  }
+  .toast-notification.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  /* Pagination */
+  .pagination-btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: rgba(30, 30, 45, 0.8);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    color: #94a3b8;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  .pagination-btn:hover:not(:disabled) {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.4);
+    color: white;
+  }
+  .pagination-btn.active {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border-color: transparent;
+    color: white;
+  }
+  .pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Filter chips */
+  .filter-chip {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: #a5b4fc;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .filter-chip:hover, .filter-chip.active {
+    background: rgba(99, 102, 241, 0.3);
+    border-color: #6366f1;
+  }
+
+  /* Keyboard shortcut hint */
+  .kbd-hint {
+    padding: 2px 6px;
+    background: rgba(30, 30, 45, 0.9);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 4px;
+    font-size: 0.65rem;
+    color: #94a3b8;
+    font-family: monospace;
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+  }
+  .empty-state-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* View mode toggle */
+  .view-toggle {
+    display: flex;
+    background: rgba(30, 30, 45, 0.8);
+    border-radius: 10px;
+    padding: 4px;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+  }
+  .view-toggle button {
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .view-toggle button.active {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+  }
+
+  /* Card view */
+  .event-card {
+    background: rgba(30, 30, 45, 0.7);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 16px;
+    padding: 20px;
+    transition: all 0.3s ease;
+  }
+  .event-card:hover {
+    border-color: rgba(99, 102, 241, 0.5);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(99, 102, 241, 0.2);
+  }
+</style>
+
+<!-- Animated Background -->
+<div class="animated-bg">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="grid-overlay"></div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast-notification">
+  <span id="toastMessage">Action completed!</span>
+</div>
+
+<!-- Header -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+  <div>
+    <h1 class="text-3xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
+      Patch Events Dashboard
+    </h1>
+    <p class="text-slate-400 text-sm mt-1">
+      Monitor and manage AMI patch events across all environments
+      <span class="kbd-hint ml-2">? shortcuts</span>
+    </p>
+  </div>
+  <a href="/patch-events/new" class="action-btn action-btn-primary text-base px-6 py-3">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+    </svg>
+    Create Patch Event
+  </a>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+  <div class="stat-card-3d">
+    <div class="text-xs uppercase tracking-wider text-slate-400 mb-2">Total Events</div>
+    <div class="counter-value" data-target="{{ total_events }}">0</div>
+    <div class="text-xs text-slate-500 mt-1">All services</div>
+  </div>
+  <div class="stat-card-3d">
+    <div class="text-xs uppercase tracking-wider text-slate-400 mb-2">DEV Phase</div>
+    <div class="counter-value text-blue-400" data-target="{{ dev_phase_events }}" style="background: linear-gradient(135deg, #3b82f6, #60a5fa); -webkit-background-clip: text;">0</div>
+    <div class="text-xs text-slate-500 mt-1">In development</div>
+  </div>
+  <div class="stat-card-3d">
+    <div class="text-xs uppercase tracking-wider text-slate-400 mb-2">STAGE/PROD</div>
+    <div class="counter-value" data-target="{{ stage_phase_events + prod_phase_events }}" style="background: linear-gradient(135deg, #f59e0b, #22c55e); -webkit-background-clip: text;">0</div>
+    <div class="text-xs text-slate-500 mt-1">In progress</div>
+  </div>
+  <div class="stat-card-3d">
+    <div class="text-xs uppercase tracking-wider text-slate-400 mb-2">Closed</div>
+    <div class="counter-value" data-target="{{ closed_events }}" style="background: linear-gradient(135deg, #22c55e, #10b981); -webkit-background-clip: text;">0</div>
+    <div class="text-xs text-slate-500 mt-1">Completed</div>
+  </div>
+</div>
+
+<!-- Search and Filters -->
+<div class="glass-card p-6 mb-6">
+  <div class="flex flex-wrap items-center gap-4">
+    <!-- Search -->
+    <div class="relative flex-1 min-w-[250px]">
+      <input 
+        type="text" 
+        id="searchInput" 
+        placeholder="Search by service, AMI ID, or state... (Press /)" 
+        class="search-glow w-full px-4 py-3 pl-12 text-sm"
+        oninput="filterEvents()"
+      />
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+    </div>
+
+    <!-- Quick Filters -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <span class="text-xs text-slate-500">Quick:</span>
+      <button class="filter-chip active" data-filter="all" onclick="quickFilter('all', this)">All</button>
+      <button class="filter-chip" data-filter="DEV" onclick="quickFilter('DEV', this)">DEV</button>
+      <button class="filter-chip" data-filter="STAGE" onclick="quickFilter('STAGE', this)">STAGE</button>
+      <button class="filter-chip" data-filter="PROD" onclick="quickFilter('PROD', this)">PROD</button>
+      <button class="filter-chip" data-filter="CLOSED" onclick="quickFilter('CLOSED', this)">Closed</button>
+    </div>
+
+    <!-- View Toggle -->
+    <div class="view-toggle">
+      <button class="active" onclick="setView('table', this)" title="Table view">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+        </svg>
+      </button>
+      <button onclick="setView('cards', this)" title="Card view">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+        </svg>
+      </button>
+    </div>
   </div>
 
-  <section
-    class="stats bg-base-200 border border-base-300/60 shadow-xl mb-6 max-w-xl"
-  >
-    <div class="stat">
-      <div class="stat-title text-xs tracking-wide uppercase text-base-400">
-        Total patch events
-      </div>
-      <div class="stat-value text-primary">{{ total_events }}</div>
-      <div class="stat-desc text-xs text-base-400">
-        Across all services and environments
-      </div>
-    </div>
-  </section>
-
-  <form
-    method="get"
-    action="/"
-    class="card bg-base-200 border border-base-300/60 shadow-xl mb-6"
-  >
-    <div class="card-body grid grid-cols-1 md:grid-cols-4 gap-4">
+  <!-- Advanced Filters (collapsible) -->
+  <div id="advancedFilters" class="mt-4 pt-4 border-t border-neutral-700/50 hidden">
+    <form method="get" action="/" class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div>
-        <label class="label"><span class="label-text">Service</span></label>
-        <select name="service_id" class="select select-bordered w-full">
+        <label class="text-xs text-slate-400 mb-1 block">Service</label>
+        <select name="service_id" class="search-glow w-full px-3 py-2 text-sm">
           <option value="">All Services</option>
           {% for svc in services %}
-            <option
-              value="{{ svc.id }}"
-              {% if selected_service_id == svc.id %}selected{% endif %}
-            >
-              {{ svc.name }}
-            </option>
+            <option value="{{ svc.id }}" {% if selected_service_id == svc.id %}selected{% endif %}>{{ svc.name }}</option>
           {% endfor %}
         </select>
       </div>
-
       <div>
-        <label class="label"><span class="label-text">Environment</span></label>
-        <select name="environment" class="select select-bordered w-full">
+        <label class="text-xs text-slate-400 mb-1 block">Environment</label>
+        <select name="environment" class="search-glow w-full px-3 py-2 text-sm">
           <option value="">All Environments</option>
           {% for env in environment_options %}
-            <option
-              value="{{ env }}"
-              {% if selected_environment == env %}selected{% endif %}
-            >
-              {{ env }}
-            </option>
+            <option value="{{ env }}" {% if selected_environment == env %}selected{% endif %}>{{ env }}</option>
           {% endfor %}
         </select>
       </div>
-
       <div>
-        <label class="label"><span class="label-text">State</span></label>
-        <select name="state" class="select select-bordered w-full">
+        <label class="text-xs text-slate-400 mb-1 block">State</label>
+        <select name="state" class="search-glow w-full px-3 py-2 text-sm">
           <option value="">All States</option>
           {% for s in state_options %}
-            <option
-              value="{{ s }}"
-              {% if selected_state == s %}selected{% endif %}
-            >
-              {{ s }}
-            </option>
+            <option value="{{ s }}" {% if selected_state == s %}selected{% endif %}>{{ s }}</option>
           {% endfor %}
         </select>
       </div>
-
       <div class="flex items-end gap-2">
-        <button type="submit" class="btn btn-secondary w-full md:w-auto">
-          Apply filters
-        </button>
-        <a href="/" class="btn btn-ghost w-full md:w-auto">Clear</a>
+        <button type="submit" class="action-btn action-btn-primary flex-1">Apply</button>
+        <a href="/" class="action-btn action-btn-secondary">Clear</a>
+      </div>
+    </form>
+  </div>
+  
+  <button onclick="toggleAdvancedFilters()" class="text-xs text-indigo-400 mt-3 hover:text-indigo-300 transition-colors">
+    <span id="filterToggleText">Show advanced filters</span> ▼
+  </button>
+</div>
+
+<!-- Results Info -->
+<div class="flex items-center justify-between mb-4">
+  <div class="text-sm text-slate-400">
+    Showing <span id="visibleCount" class="text-indigo-400 font-semibold">{{ patch_events|length }}</span> of 
+    <span class="font-semibold">{{ total_events }}</span> events
+  </div>
+  <div class="text-xs text-slate-500">
+    Click column headers to sort
+  </div>
+</div>
+
+<!-- Table View -->
+<div id="tableView" class="glass-card overflow-hidden">
+  {% if patch_events %}
+    <div class="overflow-x-auto">
+      <table class="enhanced-table w-full">
+        <thead>
+          <tr>
+            <th onclick="sortTable(0)" class="text-left">Service</th>
+            <th onclick="sortTable(1)" class="text-left">Environment</th>
+            <th onclick="sortTable(2)" class="text-left">AMI ID</th>
+            <th onclick="sortTable(3)" class="text-left">Date</th>
+            <th onclick="sortTable(4)" class="text-left">State</th>
+            <th class="text-right pr-4">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="eventsTableBody">
+          {% for event in patch_events %}
+            <tr class="event-row" 
+                data-service="{{ event.service.name }}" 
+                data-env="{{ event.environment.value }}"
+                data-ami="{{ event.ami_id }}"
+                data-state="{{ event.current_state_code }}"
+                data-id="{{ event.id }}">
+              <td>
+                <div class="font-medium">{{ event.service.name }}</div>
+              </td>
+              <td>
+                <span class="state-badge state-{% if event.environment.value == 'DEV' %}dev{% elif event.environment.value == 'STAGE' %}stage{% else %}prod{% endif %}">
+                  {{ event.environment.value }}
+                </span>
+              </td>
+              <td class="font-mono text-xs text-slate-300">{{ event.ami_id }}</td>
+              <td class="text-slate-400">{{ event.patch_date }}</td>
+              <td>
+                <span class="state-badge 
+                  {% if event.current_state_code.startswith('DEV') %}state-dev
+                  {% elif event.current_state_code.startswith('STAGE') %}state-stage
+                  {% elif event.current_state_code.startswith('PROD') %}state-prod
+                  {% else %}state-closed{% endif %}">
+                  {{ event.current_state_code }}
+                </span>
+              </td>
+              <td class="text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <a href="/patch-events/{{ event.id }}" class="action-btn action-btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    View
+                  </a>
+                  <a href="/patch-events/{{ event.id }}/analysis" class="action-btn action-btn-secondary" title="View Analysis">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex items-center justify-between p-4 border-t border-neutral-700/50">
+      <div class="text-xs text-slate-500">
+        Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="pagination-btn" onclick="prevPage()" id="prevBtn" disabled>← Prev</button>
+        <div id="pageNumbers" class="flex gap-1"></div>
+        <button class="pagination-btn" onclick="nextPage()" id="nextBtn">Next →</button>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-slate-500">Per page:</span>
+        <select id="perPage" onchange="changePerPage()" class="search-glow px-2 py-1 text-xs">
+          <option value="5">5</option>
+          <option value="10" selected>10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+        </select>
       </div>
     </div>
-  </form>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+      </div>
+      <h3 class="text-lg font-semibold text-slate-300 mb-2">No patch events found</h3>
+      <p class="text-slate-500 mb-4">Try adjusting your filters or create a new patch event to get started.</p>
+      <a href="/patch-events/new" class="action-btn action-btn-primary">Create Patch Event</a>
+    </div>
+  {% endif %}
+</div>
 
-  <div class="card bg-base-200 border border-base-300/60 shadow-xl">
-    <div class="card-body p-0">
-      {% if patch_events %}
-        <div class="overflow-x-auto">
-          <table class="table table-zebra table-sm w-full">
-            <thead class="bg-neutral-900/80 text-[0.7rem] uppercase tracking-wide text-slate-400">
-              <tr>
-                <th>Service</th>
-                <th>Environment</th>
-                <th>AMI ID</th>
-                <th>Date</th>
-                <th>State</th>
-                <th class="text-right pr-4">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-neutral-800">
-              {% for event in patch_events %}
-                <tr class="hover:bg-neutral-900/60 transition-colors">
-                  <td>{{ event.service.name }}</td>
-                  <td>{{ event.environment.value }}</td>
-                  <td class="font-mono text-xs">{{ event.ami_id }}</td>
-                  <td>{{ event.patch_date }}</td>
-                  <td>
-                    <span
-                      class="badge badge-sm
-                        {% if event.current_state_code.startswith('DEV') %} badge-info
-                        {% elif event.current_state_code.startswith('STAGE') %} badge-warning
-                        {% elif event.current_state_code.startswith('PROD') %} badge-success
-                        {% elif event.current_state_code == 'CLOSED' %} badge-neutral
-                        {% else %} badge-outline{% endif %}"
-                    >
-                      {{ event.current_state_code }}
-                    </span>
-                  </td>
-                  <td class="text-right pr-4">
-                    <a
-                      href="/patch-events/{{ event.id }}"
-                      class="btn btn-sm btn-primary"
-                    >
-                      View
-                    </a>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+<!-- Card View (hidden by default) -->
+<div id="cardView" class="hidden">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="eventsCardGrid">
+    {% for event in patch_events %}
+      <div class="event-card event-card-item" 
+           data-service="{{ event.service.name }}" 
+           data-env="{{ event.environment.value }}"
+           data-ami="{{ event.ami_id }}"
+           data-state="{{ event.current_state_code }}">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <h3 class="font-semibold text-white">{{ event.service.name }}</h3>
+            <p class="text-xs text-slate-400 font-mono">{{ event.ami_id }}</p>
+          </div>
+          <span class="state-badge 
+            {% if event.current_state_code.startswith('DEV') %}state-dev
+            {% elif event.current_state_code.startswith('STAGE') %}state-stage
+            {% elif event.current_state_code.startswith('PROD') %}state-prod
+            {% else %}state-closed{% endif %}">
+            {{ event.current_state_code }}
+          </span>
         </div>
-      {% else %}
-        <div class="p-6">
-          <p class="text-sm text-base-content/70">
-            No patch events found. Try adjusting filters or create a new patch event.
-          </p>
+        <div class="flex items-center gap-4 text-xs text-slate-400 mb-4">
+          <span>{{ event.environment.value }}</span>
+          <span>{{ event.patch_date }}</span>
         </div>
-      {% endif %}
+        <div class="flex gap-2">
+          <a href="/patch-events/{{ event.id }}" class="action-btn action-btn-primary flex-1 justify-center">View Details</a>
+          <a href="/patch-events/{{ event.id }}/analysis" class="action-btn action-btn-secondary" title="Analysis">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Keyboard Shortcuts Modal -->
+<dialog id="shortcutsModal" class="modal">
+  <div class="modal-box glass-card">
+    <h3 class="font-bold text-lg mb-4">⌨️ Keyboard Shortcuts</h3>
+    <div class="space-y-2 text-sm">
+      <div class="flex justify-between"><span>Search</span><span class="kbd-hint">/</span></div>
+      <div class="flex justify-between"><span>Create new event</span><span class="kbd-hint">N</span></div>
+      <div class="flex justify-between"><span>Toggle view</span><span class="kbd-hint">V</span></div>
+      <div class="flex justify-between"><span>Show shortcuts</span><span class="kbd-hint">?</span></div>
+      <div class="flex justify-between"><span>Close modal</span><span class="kbd-hint">Esc</span></div>
+    </div>
+    <div class="modal-action">
+      <form method="dialog"><button class="btn">Close</button></form>
     </div>
   </div>
+</dialog>
+
+<script>
+  // State
+  let currentPage = 1;
+  let perPage = 10;
+  let currentFilter = 'all';
+  let currentView = 'table';
+  let sortColumn = -1;
+  let sortAsc = true;
+
+  // Toast
+  function showToast(message, duration = 3000) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toastMessage').textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), duration);
+  }
+
+  // Animated counters
+  function animateCounters() {
+    document.querySelectorAll('.counter-value').forEach(counter => {
+      const target = parseInt(counter.dataset.target) || 0;
+      const duration = 1500;
+      const step = target / (duration / 16);
+      let current = 0;
+      
+      const timer = setInterval(() => {
+        current += step;
+        if (current >= target) {
+          counter.textContent = target;
+          clearInterval(timer);
+        } else {
+          counter.textContent = Math.floor(current);
+        }
+      }, 16);
+    });
+  }
+
+  // Filter events
+  function filterEvents() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('.event-row');
+    const cards = document.querySelectorAll('.event-card-item');
+    let visibleCount = 0;
+
+    const filterFn = (el) => {
+      const service = el.dataset.service.toLowerCase();
+      const ami = el.dataset.ami.toLowerCase();
+      const state = el.dataset.state.toLowerCase();
+      const env = el.dataset.env.toLowerCase();
+      
+      const matchesSearch = service.includes(searchTerm) || ami.includes(searchTerm) || state.includes(searchTerm);
+      const matchesFilter = currentFilter === 'all' || state.startsWith(currentFilter.toLowerCase()) || (currentFilter === 'CLOSED' && state === 'closed');
+      
+      return matchesSearch && matchesFilter;
+    };
+
+    rows.forEach(row => {
+      if (filterFn(row)) {
+        row.style.display = '';
+        visibleCount++;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+
+    cards.forEach(card => {
+      card.style.display = filterFn(card) ? '' : 'none';
+    });
+
+    document.getElementById('visibleCount').textContent = visibleCount;
+    updatePagination();
+  }
+
+  // Quick filter
+  function quickFilter(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    filterEvents();
+    showToast(`Filtered: ${filter === 'all' ? 'All events' : filter}`);
+  }
+
+  // Toggle advanced filters
+  function toggleAdvancedFilters() {
+    const filters = document.getElementById('advancedFilters');
+    const text = document.getElementById('filterToggleText');
+    filters.classList.toggle('hidden');
+    text.textContent = filters.classList.contains('hidden') ? 'Show advanced filters' : 'Hide advanced filters';
+  }
+
+  // View toggle
+  function setView(view, btn) {
+    currentView = view;
+    document.querySelectorAll('.view-toggle button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    document.getElementById('tableView').classList.toggle('hidden', view !== 'table');
+    document.getElementById('cardView').classList.toggle('hidden', view !== 'cards');
+    showToast(`Switched to ${view} view`);
+  }
+
+  // Sort table
+  function sortTable(colIndex) {
+    const tbody = document.getElementById('eventsTableBody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    const headers = document.querySelectorAll('.enhanced-table thead th');
+    
+    // Toggle sort direction
+    if (sortColumn === colIndex) {
+      sortAsc = !sortAsc;
+    } else {
+      sortColumn = colIndex;
+      sortAsc = true;
+    }
+
+    // Update header classes
+    headers.forEach((h, i) => {
+      h.classList.remove('sorted-asc', 'sorted-desc');
+      if (i === colIndex) {
+        h.classList.add(sortAsc ? 'sorted-asc' : 'sorted-desc');
+      }
+    });
+
+    // Sort rows
+    rows.sort((a, b) => {
+      const aVal = a.cells[colIndex].textContent.trim();
+      const bVal = b.cells[colIndex].textContent.trim();
+      return sortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+    showToast(`Sorted by column ${colIndex + 1}`);
+  }
+
+  // Pagination
+  function updatePagination() {
+    const visibleRows = Array.from(document.querySelectorAll('.event-row')).filter(r => r.style.display !== 'none');
+    const totalPages = Math.ceil(visibleRows.length / perPage) || 1;
+    
+    document.getElementById('totalPages').textContent = totalPages;
+    document.getElementById('currentPage').textContent = currentPage;
+    document.getElementById('prevBtn').disabled = currentPage === 1;
+    document.getElementById('nextBtn').disabled = currentPage === totalPages;
+
+    // Show/hide rows based on page
+    visibleRows.forEach((row, i) => {
+      const start = (currentPage - 1) * perPage;
+      const end = start + perPage;
+      row.style.display = (i >= start && i < end) ? '' : 'none';
+    });
+
+    // Update visible count for current page
+    const pageRows = visibleRows.filter((_, i) => {
+      const start = (currentPage - 1) * perPage;
+      const end = start + perPage;
+      return i >= start && i < end;
+    });
+    document.getElementById('visibleCount').textContent = pageRows.length;
+  }
+
+  function prevPage() {
+    if (currentPage > 1) {
+      currentPage--;
+      updatePagination();
+    }
+  }
+
+  function nextPage() {
+    const visibleRows = Array.from(document.querySelectorAll('.event-row')).filter(r => r.style.display !== 'none');
+    const totalPages = Math.ceil(visibleRows.length / perPage);
+    if (currentPage < totalPages) {
+      currentPage++;
+      updatePagination();
+    }
+  }
+
+  function changePerPage() {
+    perPage = parseInt(document.getElementById('perPage').value);
+    currentPage = 1;
+    updatePagination();
+  }
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+      if (e.key === 'Escape') e.target.blur();
+      return;
+    }
+
+    switch(e.key) {
+      case '/':
+        e.preventDefault();
+        document.getElementById('searchInput').focus();
+        break;
+      case 'n':
+      case 'N':
+        window.location.href = '/patch-events/new';
+        break;
+      case 'v':
+      case 'V':
+        const newView = currentView === 'table' ? 'cards' : 'table';
+        const btn = document.querySelector(`.view-toggle button:${newView === 'table' ? 'first' : 'last'}-child`);
+        setView(newView, btn);
+        break;
+      case '?':
+        document.getElementById('shortcutsModal').showModal();
+        break;
+      case 'Escape':
+        document.querySelectorAll('dialog[open]').forEach(d => d.close());
+        break;
+    }
+  });
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', () => {
+    animateCounters();
+    updatePagination();
+    showToast('Dashboard loaded! Press ? for shortcuts', 3000);
+    
+    // Initialize tooltips
+    if (typeof tippy !== 'undefined') {
+      tippy('[title]', { animation: 'scale' });
+    }
+  });
+</script>
 {% endblock %}
 

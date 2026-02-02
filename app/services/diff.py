@@ -37,6 +37,16 @@ def count_by_severity(
     return {severity: counter.get(severity, 0) for severity in Severity}
 
 
+def compute_remaining_vulnerabilities(
+    after_vulnerabilities: Iterable[Vulnerability],
+) -> List[Vulnerability]:
+    """Return vulnerabilities still present in AFTER snapshot.
+
+    These are the vulnerabilities that were not fixed by the patch.
+    """
+    return list(after_vulnerabilities)
+
+
 def extract_before_after_vulnerabilities(
     snapshots,
 ) -> Dict[SnapshotType, List[Vulnerability]]:

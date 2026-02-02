@@ -5,430 +5,245 @@
 {% endblock %}
 
 {% block content %}
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-    <h1 class="text-2xl font-semibold text-base-content">
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+
+<style>
+  .animated-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%); }
+  .animated-bg::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 70%, rgba(99, 102, 241, 0.12) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(139, 92, 246, 0.12) 0%, transparent 50%); animation: bgPulse 20s ease-in-out infinite; }
+  @keyframes bgPulse { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(1%, 1%); } }
+  .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.3; animation: orbFloat 25s ease-in-out infinite; }
+  .orb-1 { width: 350px; height: 350px; background: #6366f1; top: 5%; right: 15%; }
+  .orb-2 { width: 280px; height: 280px; background: #8b5cf6; bottom: 20%; left: 5%; animation-delay: -8s; }
+  @keyframes orbFloat { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(20px, -20px); } }
+  .hex-grid { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%236366f1' fill-opacity='0.03'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
+  .glass-card { background: rgba(30, 30, 45, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); transition: all 0.4s ease; }
+  .glass-card:hover { border-color: rgba(99, 102, 241, 0.4); }
+  .metadata-card { background: linear-gradient(145deg, rgba(30, 30, 50, 0.9), rgba(20, 20, 40, 0.95)); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 20px; padding: 2rem; position: relative; overflow: hidden; }
+  .metadata-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #6366f1, #8b5cf6, #3b82f6); }
+  .meta-item { background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.15); border-radius: 12px; padding: 1rem; transition: all 0.3s ease; }
+  .meta-item:hover { background: rgba(99, 102, 241, 0.1); transform: translateY(-2px); }
+  .meta-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; margin-bottom: 4px; }
+  .meta-value { font-size: 1rem; font-weight: 600; color: #e2e8f0; }
+  .state-badge-lg { padding: 10px 20px; border-radius: 30px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; display: inline-flex; align-items: center; gap: 8px; }
+  .state-dev { background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.1)); color: #60a5fa; border: 2px solid rgba(59, 130, 246, 0.5); }
+  .state-stage { background: linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(251, 191, 36, 0.1)); color: #fbbf24; border: 2px solid rgba(251, 191, 36, 0.5); }
+  .state-prod { background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(34, 197, 94, 0.1)); color: #22c55e; border: 2px solid rgba(34, 197, 94, 0.5); }
+  .state-closed { background: linear-gradient(135deg, rgba(148, 163, 184, 0.3), rgba(148, 163, 184, 0.1)); color: #94a3b8; border: 2px solid rgba(148, 163, 184, 0.5); }
+  .workflow-step { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: rgba(30, 30, 45, 0.5); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 12px; transition: all 0.3s ease; }
+  .workflow-step:hover { background: rgba(99, 102, 241, 0.1); }
+  .workflow-step.completed { border-color: rgba(34, 197, 94, 0.5); }
+  .workflow-step.active { border-color: rgba(99, 102, 241, 0.5); background: rgba(99, 102, 241, 0.15); }
+  .workflow-step.pending { opacity: 0.5; }
+  .step-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; }
+  .step-icon.completed { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+  .step-icon.active { background: rgba(99, 102, 241, 0.3); color: #a5b4fc; }
+  .step-icon.pending { background: rgba(148, 163, 184, 0.2); color: #64748b; }
+  .cta-btn { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 16px 32px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; border-radius: 16px; color: white; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease; text-decoration: none; }
+  .cta-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4); }
+  .cta-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .action-btn { padding: 10px 20px; border-radius: 10px; font-size: 0.8rem; font-weight: 600; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; text-decoration: none; }
+  .action-btn-outline { background: transparent; border: 1px solid rgba(99, 102, 241, 0.4); color: #a5b4fc; }
+  .action-btn-outline:hover { background: rgba(99, 102, 241, 0.15); }
+  .action-btn-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; }
+  .action-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); }
+  .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .toast-notification { position: fixed; bottom: 20px; right: 20px; padding: 14px 28px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(99, 102, 241, 0.4); transform: translateY(100px); opacity: 0; transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 1000; }
+  .toast-notification.show { transform: translateY(0); opacity: 1; }
+  .collapsible-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 12px 0; border-bottom: 1px solid rgba(99, 102, 241, 0.2); }
+  .collapsible-header:hover { color: #a5b4fc; }
+  .collapsible-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+  .collapsible-content.open { max-height: 1000px; }
+  .collapse-icon { transition: transform 0.3s ease; }
+  .collapse-icon.open { transform: rotate(180deg); }
+  .sev-badge { padding: 3px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 700; }
+  .sev-critical { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+  .sev-high { background: rgba(249, 115, 22, 0.2); color: #fb923c; }
+  .sev-medium { background: rgba(234, 179, 8, 0.2); color: #facc15; }
+  .sev-low { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+  .form-input { background: rgba(20, 20, 35, 0.8); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 10px; padding: 12px 16px; color: #e2e8f0; transition: all 0.3s ease; width: 100%; }
+  .form-input:focus { border-color: #6366f1; box-shadow: 0 0 20px rgba(99, 102, 241, 0.2); outline: none; }
+  .form-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 6px; display: block; }
+  .enhanced-table { border-collapse: separate; border-spacing: 0 6px; width: 100%; }
+  .enhanced-table thead th { background: transparent; padding: 10px 12px; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; }
+  .enhanced-table tbody tr { background: rgba(30, 30, 45, 0.4); transition: all 0.2s ease; }
+  .enhanced-table tbody tr:hover { background: rgba(99, 102, 241, 0.1); }
+  .enhanced-table tbody td { padding: 10px 12px; font-size: 0.8rem; }
+  .enhanced-table tbody td:first-child { border-radius: 8px 0 0 8px; }
+  .enhanced-table tbody td:last-child { border-radius: 0 8px 8px 0; }
+  .kbd-hint { padding: 2px 6px; background: rgba(30, 30, 45, 0.9); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 4px; font-size: 0.6rem; color: #64748b; font-family: monospace; }
+</style>
+
+<div class="animated-bg"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="hex-grid"></div></div>
+<div id="toast" class="toast-notification"><span id="toastMessage">Action completed!</span></div>
+
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+  <div>
+    <a href="/" class="inline-flex items-center gap-2 text-slate-400 hover:text-indigo-400 text-sm mb-2 transition-colors">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+      Back to Dashboard
+    </a>
+    <h1 class="text-3xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
       {% if is_new %}Create Patch Event{% else %}Patch Event Detail{% endif %}
     </h1>
-    <a href="/" class="btn btn-ghost">Back to Dashboard</a>
+    {% if not is_new and patch_event %}<p class="text-slate-400 text-sm mt-1">{{ patch_event.service.name }} · {{ patch_event.ami_id }} <span class="kbd-hint ml-2">? shortcuts</span></p>{% endif %}
   </div>
-
-  {% if message %}
-    <div class="alert alert-info shadow mb-4">
-      <span>{{ message }}</span>
-    </div>
+  {% if not is_new and patch_event %}
+  <div class="state-badge-lg {% if patch_event.current_state_code.startswith('DEV') %}state-dev{% elif patch_event.current_state_code.startswith('STAGE') %}state-stage{% elif patch_event.current_state_code.startswith('PROD') %}state-prod{% else %}state-closed{% endif %}">
+    <span class="w-3 h-3 rounded-full bg-current animate-pulse"></span>{{ patch_event.current_state_code }}
+  </div>
   {% endif %}
+</div>
 
-  <div class="grid gap-6 md:grid-cols-2">
-    <div class="card bg-base-200 border border-base-300/60 shadow-xl">
-      <div class="card-body">
-        <h2 class="card-title">Patch Metadata</h2>
+{% if message %}<div class="glass-card p-4 mb-6 border-l-4 border-indigo-500"><div class="flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><span class="text-slate-200">{{ message }}</span></div></div>{% endif %}
 
-        {% if is_new %}
-          <form method="post" action="/patch-events" class="space-y-4">
-            <div>
-              <label class="label"><span class="label-text">Service</span></label>
-              <select
-                name="service_id"
-                class="select select-bordered w-full"
-                required
-              >
-                <option value="" disabled selected>Select a service</option>
-                {% for svc in services %}
-                  <option value="{{ svc.id }}">{{ svc.name }}</option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <div>
-              <label class="label"><span class="label-text">Environment</span></label>
-              <select
-                name="environment"
-                class="select select-bordered w-full"
-                required
-              >
-                <option value="" disabled selected>Select environment</option>
-                {% for env in environment_options %}
-                  <option value="{{ env }}">{{ env }}</option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <div>
-              <label class="label"><span class="label-text">AMI ID</span></label>
-              <input
-                type="text"
-                name="ami_id"
-                class="input input-bordered w-full font-mono text-sm"
-                placeholder="ami-0syntheticabcd"
-                required
-              />
-            </div>
-
-            <div>
-              <label class="label"><span class="label-text">Patch Date</span></label>
-              <input
-                type="date"
-                name="patch_date"
-                class="input input-bordered w-full"
-                required
-              />
-            </div>
-
-            <div>
-              <label class="label"><span class="label-text">Notes</span></label>
-              <textarea
-                name="notes"
-                class="textarea textarea-bordered w-full"
-                rows="3"
-                placeholder="Optional description of this synthetic patch event"
-              ></textarea>
-            </div>
-
-            <div class="pt-2">
-              <button type="submit" class="btn btn-primary">Create Patch Event</button>
-            </div>
-          </form>
-        {% else %}
-          <div class="space-y-3">
-            <div>
-              <span class="label-text font-semibold">Service</span>
-              <div>{{ patch_event.service.name }}</div>
-            </div>
-            <div>
-              <span class="label-text font-semibold">Environment</span>
-              <div>{{ patch_event.environment.value }}</div>
-            </div>
-            <div>
-              <span class="label-text font-semibold">AMI ID</span>
-              <div class="font-mono text-sm">{{ patch_event.ami_id }}</div>
-            </div>
-            <div>
-              <span class="label-text font-semibold">Patch Date</span>
-              <div>{{ patch_event.patch_date }}</div>
-            </div>
-            <div>
-              <span class="label-text font-semibold">Notes</span>
-              <div>{{ patch_event.notes or "(none)" }}</div>
-            </div>
-          </div>
-        {% endif %}
+{% if is_new %}
+<div class="max-w-2xl mx-auto">
+  <div class="metadata-card">
+    <h2 class="text-xl font-bold text-white mb-6">New Patch Event</h2>
+    <form method="post" action="/patch-events" class="space-y-5">
+      <div><label class="form-label">Service</label><select name="service_id" class="form-input" required><option value="" disabled selected>Select a service</option>{% for svc in services %}<option value="{{ svc.id }}">{{ svc.name }}</option>{% endfor %}</select></div>
+      <div><label class="form-label">Environment</label><select name="environment" class="form-input" required><option value="" disabled selected>Select environment</option>{% for env in environment_options %}<option value="{{ env }}">{{ env }}</option>{% endfor %}</select></div>
+      <div><label class="form-label">AMI ID</label><input type="text" name="ami_id" class="form-input font-mono" placeholder="ami-0syntheticabcd" required /></div>
+      <div><label class="form-label">Patch Date</label><input type="date" name="patch_date" class="form-input" required /></div>
+      <div><label class="form-label">Notes (Optional)</label><textarea name="notes" class="form-input" rows="3" placeholder="Description"></textarea></div>
+      <button type="submit" class="cta-btn w-full mt-4"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>Create Patch Event</button>
+    </form>
+  </div>
+</div>
+{% else %}
+<div class="grid gap-6 lg:grid-cols-3">
+  <div class="lg:col-span-1 space-y-6">
+    <div class="metadata-card">
+      <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>Patch Metadata</h2>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="meta-item col-span-2"><div class="meta-label">Service</div><div class="meta-value">{{ patch_event.service.name }}</div></div>
+        <div class="meta-item"><div class="meta-label">Environment</div><div class="meta-value">{{ patch_event.environment.value }}</div></div>
+        <div class="meta-item"><div class="meta-label">Patch Date</div><div class="meta-value">{{ patch_event.patch_date }}</div></div>
+        <div class="meta-item col-span-2"><div class="meta-label">AMI ID</div><div class="meta-value font-mono text-sm">{{ patch_event.ami_id }}</div></div>
+        {% if patch_event.notes %}<div class="meta-item col-span-2"><div class="meta-label">Notes</div><div class="meta-value text-sm text-slate-300">{{ patch_event.notes }}</div></div>{% endif %}
       </div>
     </div>
-
-    {% if not is_new and patch_event %}
-      <div class="space-y-6">
-        <div class="card bg-base-200 border border-base-300/60 shadow-xl">
-          <div class="card-body space-y-3">
-            <h2 class="card-title">Lifecycle State</h2>
-            <p class="mb-2 text-sm text-base-content/80">
-              Current state:
-              <span
-                class="badge badge-sm
-                  {% if patch_event.current_state_code.startswith('DEV') %} badge-info
-                  {% elif patch_event.current_state_code.startswith('STAGE') %} badge-warning
-                  {% elif patch_event.current_state_code.startswith('PROD') %} badge-success
-                  {% elif patch_event.current_state_code == 'CLOSED' %} badge-neutral
-                  {% else %} badge-outline{% endif %}"
-              >
-                {{ patch_event.current_state_code }}
-              </span>
-            </p>
-
-            <form
-              method="post"
-              action="/patch-events/{{ patch_event.id }}/transition-state"
-              class="flex flex-col sm:flex-row gap-2 items-start sm:items-end"
-            >
-              <div class="w-full sm:w-auto">
-                <label class="label">
-                  <span class="label-text">Next state</span>
-                </label>
-                <select
-                  name="target_state"
-                  class="select select-bordered w-full min-w-[12rem]"
-                  {% if not allowed_next_states %}disabled{% endif %}
-                >
-                  {% if not allowed_next_states %}
-                    <option value="">No further transitions allowed</option>
-                  {% else %}
-                    {% for st in allowed_next_states %}
-                      <option value="{{ st }}">{{ st }}</option>
-                    {% endfor %}
-                  {% endif %}
-                </select>
-              </div>
-
-              <button
-                type="submit"
-                class="btn btn-secondary mt-2 sm:mt-6"
-                {% if not allowed_next_states %}disabled{% endif %}
-              >
-                Apply transition
-              </button>
-            </form>
-
-            <p class="text-xs text-base-content/60">
-              Transitions are restricted by the lifecycle rules: DEV evidence
-              is required before promoting toward STAGE/PROD, and the event
-              cannot be closed unless PROD is patched.
-            </p>
-          </div>
+    <div class="glass-card p-5">
+      <h3 class="text-sm font-semibold text-slate-300 mb-4">State Transition</h3>
+      <form method="post" action="/patch-events/{{ patch_event.id }}/transition-state" class="space-y-3">
+        <select name="target_state" class="form-input text-sm" {% if not allowed_next_states %}disabled{% endif %}>{% if not allowed_next_states %}<option value="">No transitions available</option>{% else %}{% for st in allowed_next_states %}<option value="{{ st }}">{{ st }}</option>{% endfor %}{% endif %}</select>
+        <button type="submit" class="action-btn action-btn-primary w-full justify-center" {% if not allowed_next_states %}disabled{% endif %}>Apply Transition</button>
+      </form>
+      <p class="text-xs text-slate-500 mt-3">DEV evidence required before STAGE/PROD.</p>
+    </div>
+  </div>
+  <div class="lg:col-span-2 space-y-6">
+    <div class="glass-card p-6">
+      <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>Vulnerability Scan Workflow</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="workflow-step {% if before_count > 0 %}completed{% else %}active{% endif %}">
+          <div class="step-icon {% if before_count > 0 %}completed{% else %}active{% endif %}">{% if before_count > 0 %}✓{% else %}1{% endif %}</div>
+          <div class="flex-1"><div class="text-sm font-semibold">BEFORE Scan</div><div class="text-xs text-slate-400">{{ before_count }} vulns</div></div>
+          <form method="post" action="/patch-events/{{ patch_event.id }}/generate-before"><button type="submit" class="action-btn action-btn-outline text-xs py-2 px-3">{% if before_count > 0 %}Regen{% else %}Gen{% endif %}</button></form>
         </div>
-
-        <div class="card bg-base-200 border border-base-300/60 shadow-xl">
-          <div class="card-body space-y-4">
-            <h2 class="card-title">Synthetic Scan Evidence</h2>
-
-            <div class="flex flex-wrap gap-4 text-sm">
-              <div>
-                <span class="font-semibold">BEFORE snapshot:</span>
-                <span>{{ before_count }} vulnerabilities</span>
-              </div>
-              <div>
-                <span class="font-semibold">AFTER snapshot:</span>
-                <span>{{ after_count }} vulnerabilities</span>
-              </div>
-            </div>
-
-            <div class="flex flex-wrap gap-2">
-              <form
-                method="post"
-                action="/patch-events/{{ patch_event.id }}/generate-before"
-              >
-                <button type="submit" class="btn btn-sm btn-outline">
-                  Generate BEFORE (synthetic)
-                </button>
-              </form>
-
-              <form
-                method="post"
-                action="/patch-events/{{ patch_event.id }}/generate-after"
-              >
-                <button
-                  type="submit"
-                  class="btn btn-sm btn-outline"
-                  {% if before_count == 0 %}disabled{% endif %}
-                >
-                  Generate AFTER (synthetic)
-                </button>
-              </form>
-
-              <form
-                method="post"
-                action="/patch-events/{{ patch_event.id }}/compute-evidence"
-              >
-                <button
-                  type="submit"
-                  class="btn btn-sm btn-primary"
-                  {% if before_count == 0 or after_count == 0 %}disabled{% endif %}
-                >
-                  Compute fixed vulnerabilities
-                </button>
-              </form>
-            </div>
-
-            {% if before_count == 0 %}
-              <p class="text-xs text-warning mt-2">
-                Generate BEFORE snapshot first to unlock AFTER.
-              </p>
-            {% endif %}
-
-            {% if before_count == 0 or after_count == 0 %}
-              <p class="text-xs text-warning mt-1">
-                Compute fixed vulnerabilities requires BOTH BEFORE and AFTER snapshots.
-              </p>
-            {% endif %}
-
-            {% if dev_evidence_available and fixed_vulnerabilities %}
-              <div class="divider text-sm">Fixed vulnerabilities</div>
-
-              {% set crit = severity_counts.CRITICAL or 0 %}
-              {% set high = severity_counts.HIGH or 0 %}
-              {% set med = severity_counts.MEDIUM or 0 %}
-              {% set low = severity_counts.LOW or 0 %}
-              {% set total = crit + high + med + low %}
-
-              <div class="space-y-4 mb-4">
-                <div class="flex flex-wrap items-center gap-2 text-sm">
-                  <span class="font-semibold text-slate-100">
-                    Counts by severity:
-                  </span>
-                  <span class="badge badge-sm badge-error">CRIT: {{ crit }}</span>
-                  <span class="badge badge-sm badge-warning">HIGH: {{ high }}</span>
-                  <span class="badge badge-sm badge-info">MED: {{ med }}</span>
-                  <span class="badge badge-sm badge-success">LOW: {{ low }}</span>
-                </div>
-
-                <div class="space-y-2 text-xs text-slate-300">
-                  <div>
-                    <div class="flex justify-between mb-1">
-                      <span class="font-semibold text-error">Critical</span>
-                      <span>
-                        {{ crit }}
-                        {% if total %}
-                          ({{ (crit * 100 // total) }}%)
-                        {% endif %}
-                      </span>
-                    </div>
-                    <progress
-                      class="progress progress-error h-2"
-                      value="{{ crit }}"
-                      max="{{ total or 1 }}"
-                    ></progress>
-                  </div>
-
-                  <div>
-                    <div class="flex justify-between mb-1">
-                      <span class="font-semibold text-warning">High</span>
-                      <span>
-                        {{ high }}
-                        {% if total %}
-                          ({{ (high * 100 // total) }}%)
-                        {% endif %}
-                      </span>
-                    </div>
-                    <progress
-                      class="progress progress-warning h-2"
-                      value="{{ high }}"
-                      max="{{ total or 1 }}"
-                    ></progress>
-                  </div>
-
-                  <div>
-                    <div class="flex justify-between mb-1">
-                      <span class="font-semibold text-info">Medium</span>
-                      <span>
-                        {{ med }}
-                        {% if total %}
-                          ({{ (med * 100 // total) }}%)
-                        {% endif %}
-                      </span>
-                    </div>
-                    <progress
-                      class="progress progress-info h-2"
-                      value="{{ med }}"
-                      max="{{ total or 1 }}"
-                    ></progress>
-                  </div>
-
-                  <div>
-                    <div class="flex justify-between mb-1">
-                      <span class="font-semibold text-success">Low</span>
-                      <span>
-                        {{ low }}
-                        {% if total %}
-                          ({{ (low * 100 // total) }}%)
-                        {% endif %}
-                      </span>
-                    </div>
-                    <progress
-                      class="progress progress-success h-2"
-                      value="{{ low }}"
-                      max="{{ total or 1 }}"
-                    ></progress>
-                  </div>
-                </div>
-              </div>
-
-              <div class="overflow-x-auto max-h-80">
-                <table class="table table-zebra table-sm w-full">
-                  <thead class="bg-neutral-900/80 text-[0.7rem] uppercase tracking-wide text-slate-400">
-                    <tr>
-                      <th>Identifier</th>
-                      <th>CVE</th>
-                      <th>Plugin ID</th>
-                      <th>Severity</th>
-                      <th>Host</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-neutral-800">
-                    {% for v in fixed_vulnerabilities %}
-                      <tr>
-                        <td class="font-mono text-xs">{{ v.synthetic_id }}</td>
-                        <td class="font-mono text-xs">{{ v.cve or "-" }}</td>
-                        <td class="font-mono text-xs">{{ v.plugin_id or "-" }}</td>
-                        <td>{{ v.severity.value }}</td>
-                        <td class="font-mono text-xs">{{ v.host }}</td>
-                      </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            {% elif dev_evidence_available %}
-              <p class="text-sm text-base-content/70">
-                DEV evidence is marked available, but no fixed vulnerabilities
-                are currently derived from the synthetic snapshots.
-              </p>
-            {% else %}
-              <p class="text-sm text-base-content/70">
-                Generate synthetic BEFORE and AFTER snapshots, then compute
-                fixed vulnerabilities to populate DEV evidence for this event.
-              </p>
-            {% endif %}
-          </div>
+        <div class="workflow-step {% if after_count > 0 %}completed{% elif before_count > 0 %}active{% else %}pending{% endif %}">
+          <div class="step-icon {% if after_count > 0 %}completed{% elif before_count > 0 %}active{% else %}pending{% endif %}">{% if after_count > 0 %}✓{% else %}2{% endif %}</div>
+          <div class="flex-1"><div class="text-sm font-semibold">AFTER Scan</div><div class="text-xs text-slate-400">{{ after_count }} vulns</div></div>
+          <form method="post" action="/patch-events/{{ patch_event.id }}/generate-after"><button type="submit" class="action-btn action-btn-outline text-xs py-2 px-3" {% if before_count == 0 %}disabled{% endif %}>{% if after_count > 0 %}Regen{% else %}Gen{% endif %}</button></form>
         </div>
-
-        <div class="card bg-base-200 border border-base-300/60 shadow-xl">
-          <div class="card-body space-y-4">
-            <h2 class="card-title">Change Request Summaries (Synthetic)</h2>
-
-            <div class="flex flex-wrap gap-2 mb-2">
-              <form
-                method="post"
-                action="/patch-events/{{ patch_event.id }}/generate-stage-cr"
-              >
-                <button
-                  type="submit"
-                  class="btn btn-sm btn-outline"
-                  {% if not dev_evidence_available %}disabled{% endif %}
-                >
-                  Generate STAGE CR Summary
-                </button>
-              </form>
-
-              <form
-                method="post"
-                action="/patch-events/{{ patch_event.id }}/generate-prod-cr"
-              >
-                <button
-                  type="submit"
-                  class="btn btn-sm btn-outline"
-                  {% if not prod_cr_allowed %}disabled{% endif %}
-                >
-                  Generate PROD CR Summary
-                </button>
-              </form>
-            </div>
-
-            <div class="grid gap-4 md:grid-cols-2">
-              <div>
-                <p class="text-xs font-semibold mb-1">STAGE CR Summary</p>
-                <textarea
-                  readonly
-                  class="textarea textarea-bordered w-full h-48 text-xs font-mono"
-                  placeholder="Generate STAGE CR summary to see text here."
-                >{{ stage_cr_summary or "" }}</textarea>
-              </div>
-
-              <div>
-                <p class="text-xs font-semibold mb-1">PROD CR Summary</p>
-                <textarea
-                  readonly
-                  class="textarea textarea-bordered w-full h-48 text-xs font-mono"
-                  placeholder="Generate PROD CR summary (once allowed) to see text here."
-                >{{ prod_cr_summary or "" }}</textarea>
-              </div>
-            </div>
-
-            <p class="text-[0.7rem] text-base-content/60">
-              These summaries are generated from synthetic, non-production data
-              and are intended only as copy/paste examples for a conceptual
-              change management system. They do not interact with ServiceNow or
-              any real ticketing tool.
-            </p>
+        <div class="workflow-step {% if dev_evidence_available %}completed{% elif before_count > 0 and after_count > 0 %}active{% else %}pending{% endif %}">
+          <div class="step-icon {% if dev_evidence_available %}completed{% elif before_count > 0 and after_count > 0 %}active{% else %}pending{% endif %}">{% if dev_evidence_available %}✓{% else %}3{% endif %}</div>
+          <div class="flex-1"><div class="text-sm font-semibold">Compute</div><div class="text-xs text-slate-400">{% if dev_evidence_available %}Done{% else %}Pending{% endif %}</div></div>
+          <form method="post" action="/patch-events/{{ patch_event.id }}/compute-evidence"><button type="submit" class="action-btn action-btn-primary text-xs py-2 px-3" {% if before_count == 0 or after_count == 0 %}disabled{% endif %}>Compute</button></form>
+        </div>
+      </div>
+      {% if dev_evidence_available %}
+      <div class="bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 rounded-2xl p-6 text-center">
+        <div class="text-4xl mb-3">🎉</div><h3 class="text-xl font-bold text-white mb-2">Evidence Ready!</h3>
+        <p class="text-slate-300 text-sm mb-4">View the full interactive report with charts, severity breakdowns, and export options.</p>
+        <a href="/patch-events/{{ patch_event.id }}/analysis" class="cta-btn inline-flex"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>View Full Analysis</a>
+      </div>
+      {% elif before_count > 0 and after_count > 0 %}
+      <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 text-center"><div class="text-3xl mb-2">⚡</div><h3 class="text-lg font-semibold text-amber-300 mb-2">Almost There!</h3><p class="text-slate-400 text-sm">Click "Compute" to calculate fixed vulnerabilities.</p></div>
+      {% else %}
+      <div class="bg-slate-500/10 border border-slate-500/30 rounded-2xl p-6 text-center"><div class="text-3xl mb-2">📊</div><h3 class="text-lg font-semibold text-slate-300 mb-2">Generate Scan Data</h3><p class="text-slate-400 text-sm">Complete the workflow steps above.</p></div>
+      {% endif %}
+    </div>
+    {% if before_vulnerabilities %}
+    {% set b_crit = before_severity_counts.CRITICAL or 0 %}{% set b_high = before_severity_counts.HIGH or 0 %}{% set b_med = before_severity_counts.MEDIUM or 0 %}{% set b_low = before_severity_counts.LOW or 0 %}
+    <div class="glass-card p-6">
+      <div class="collapsible-header" onclick="toggleCollapsible('beforeSection', this)">
+        <div class="flex items-center gap-3"><h3 class="text-lg font-bold text-white">BEFORE Scan</h3><span class="text-sm text-slate-400">({{ before_count }})</span><div class="flex gap-1"><span class="sev-badge sev-critical">{{ b_crit }}</span><span class="sev-badge sev-high">{{ b_high }}</span><span class="sev-badge sev-medium">{{ b_med }}</span><span class="sev-badge sev-low">{{ b_low }}</span></div></div>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 collapse-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+      </div>
+      <div id="beforeSection" class="collapsible-content">
+        <div class="pt-4 overflow-x-auto max-h-64">
+          <table class="enhanced-table"><thead><tr><th>ID</th><th>CVE</th><th>Plugin</th><th>Severity</th><th>Host</th></tr></thead><tbody>
+            {% for v in before_vulnerabilities[:15] %}<tr><td class="font-mono text-xs">{{ v.synthetic_id[:10] }}...</td><td class="font-mono text-xs">{{ v.cve or "-" }}</td><td class="font-mono text-xs">{{ v.plugin_id or "-" }}</td><td><span class="sev-badge sev-{{ v.severity.value|lower }}">{{ v.severity.value }}</span></td><td class="font-mono text-xs">{{ v.host }}</td></tr>{% endfor %}
+          </tbody></table>
+          {% if before_vulnerabilities|length > 15 %}<p class="text-xs text-slate-500 text-center mt-3">Showing 15 of {{ before_vulnerabilities|length }}. <a href="/patch-events/{{ patch_event.id }}/analysis" class="text-indigo-400 hover:underline">View all</a></p>{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    {% if after_vulnerabilities %}
+    {% set a_crit = after_severity_counts.CRITICAL or 0 %}{% set a_high = after_severity_counts.HIGH or 0 %}{% set a_med = after_severity_counts.MEDIUM or 0 %}{% set a_low = after_severity_counts.LOW or 0 %}
+    <div class="glass-card p-6">
+      <div class="collapsible-header" onclick="toggleCollapsible('afterSection', this)">
+        <div class="flex items-center gap-3"><h3 class="text-lg font-bold text-white">AFTER Scan</h3><span class="text-sm text-slate-400">({{ after_count }})</span><div class="flex gap-1"><span class="sev-badge sev-critical">{{ a_crit }}</span><span class="sev-badge sev-high">{{ a_high }}</span><span class="sev-badge sev-medium">{{ a_med }}</span><span class="sev-badge sev-low">{{ a_low }}</span></div></div>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 collapse-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+      </div>
+      <div id="afterSection" class="collapsible-content">
+        <div class="pt-4 overflow-x-auto max-h-64">
+          <table class="enhanced-table"><thead><tr><th>ID</th><th>CVE</th><th>Plugin</th><th>Severity</th><th>Host</th></tr></thead><tbody>
+            {% for v in after_vulnerabilities[:15] %}<tr><td class="font-mono text-xs">{{ v.synthetic_id[:10] }}...</td><td class="font-mono text-xs">{{ v.cve or "-" }}</td><td class="font-mono text-xs">{{ v.plugin_id or "-" }}</td><td><span class="sev-badge sev-{{ v.severity.value|lower }}">{{ v.severity.value }}</span></td><td class="font-mono text-xs">{{ v.host }}</td></tr>{% endfor %}
+          </tbody></table>
+          {% if after_vulnerabilities|length > 15 %}<p class="text-xs text-slate-500 text-center mt-3">Showing 15 of {{ after_vulnerabilities|length }}. <a href="/patch-events/{{ patch_event.id }}/analysis" class="text-indigo-400 hover:underline">View all</a></p>{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    {% if dev_evidence_available and fixed_vulnerabilities %}
+    {% set crit = severity_counts.CRITICAL or 0 %}{% set high = severity_counts.HIGH or 0 %}{% set med = severity_counts.MEDIUM or 0 %}{% set low = severity_counts.LOW or 0 %}{% set total = crit + high + med + low %}
+    <div class="glass-card p-6">
+      <div class="collapsible-header" onclick="toggleCollapsible('vulnSection', this)">
+        <div class="flex items-center gap-3"><h3 class="text-lg font-bold text-white">Fixed Vulnerabilities</h3><span class="text-sm text-slate-400">({{ total }})</span><div class="flex gap-1"><span class="sev-badge sev-critical">{{ crit }}</span><span class="sev-badge sev-high">{{ high }}</span><span class="sev-badge sev-medium">{{ med }}</span><span class="sev-badge sev-low">{{ low }}</span></div></div>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 collapse-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+      </div>
+      <div id="vulnSection" class="collapsible-content">
+        <div class="pt-4 overflow-x-auto max-h-64">
+          <table class="enhanced-table"><thead><tr><th>ID</th><th>CVE</th><th>Plugin</th><th>Severity</th><th>Host</th></tr></thead><tbody>
+            {% for v in fixed_vulnerabilities[:15] %}<tr><td class="font-mono text-xs">{{ v.synthetic_id[:10] }}...</td><td class="font-mono text-xs">{{ v.cve or "-" }}</td><td class="font-mono text-xs">{{ v.plugin_id or "-" }}</td><td><span class="sev-badge sev-{{ v.severity.value|lower }}">{{ v.severity.value }}</span></td><td class="font-mono text-xs">{{ v.host }}</td></tr>{% endfor %}
+          </tbody></table>
+          {% if fixed_vulnerabilities|length > 15 %}<p class="text-xs text-slate-500 text-center mt-3">Showing 15 of {{ fixed_vulnerabilities|length }}. <a href="/patch-events/{{ patch_event.id }}/analysis" class="text-indigo-400 hover:underline">View all</a></p>{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    <div class="glass-card p-6">
+      <div class="collapsible-header" onclick="toggleCollapsible('crSection', this)">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>CR Summaries</h3>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 collapse-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+      </div>
+      <div id="crSection" class="collapsible-content">
+        <div class="pt-4 space-y-4">
+          <div class="flex gap-2 mb-4">
+            <form method="post" action="/patch-events/{{ patch_event.id }}/generate-stage-cr"><button type="submit" class="action-btn action-btn-outline" {% if not dev_evidence_available %}disabled{% endif %}>STAGE CR</button></form>
+            <form method="post" action="/patch-events/{{ patch_event.id }}/generate-prod-cr"><button type="submit" class="action-btn action-btn-outline" {% if not prod_cr_allowed %}disabled{% endif %}>PROD CR</button></form>
+          </div>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div><label class="form-label">STAGE CR</label><textarea readonly class="form-input h-32 text-xs font-mono">{{ stage_cr_summary or "" }}</textarea></div>
+            <div><label class="form-label">PROD CR</label><textarea readonly class="form-input h-32 text-xs font-mono">{{ prod_cr_summary or "" }}</textarea></div>
           </div>
         </div>
       </div>
-    {% endif %}
+    </div>
   </div>
+</div>
+{% endif %}
+
+<dialog id="shortcutsModal" class="modal"><div class="modal-box glass-card"><h3 class="font-bold text-lg mb-4">⌨️ Keyboard Shortcuts</h3><div class="space-y-2 text-sm"><div class="flex justify-between"><span>Dashboard</span><span class="kbd-hint">D</span></div><div class="flex justify-between"><span>Analysis</span><span class="kbd-hint">A</span></div><div class="flex justify-between"><span>Shortcuts</span><span class="kbd-hint">?</span></div></div><div class="modal-action"><form method="dialog"><button class="btn">Close</button></form></div></div></dialog>
+
+<script>
+function showToast(msg, dur=3000) { const t=document.getElementById('toast'); document.getElementById('toastMessage').textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), dur); }
+function toggleCollapsible(id, header) { const c=document.getElementById(id); const i=header.querySelector('.collapse-icon'); c.classList.toggle('open'); i.classList.toggle('open'); }
+document.addEventListener('keydown', (e) => { if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT') return; switch(e.key) { case 'd': case 'D': window.location.href='/'; break; case 'a': case 'A': {% if not is_new and patch_event %}window.location.href='/patch-events/{{ patch_event.id }}/analysis';{% endif %} break; case '?': document.getElementById('shortcutsModal').showModal(); break; case 'Escape': document.querySelectorAll('dialog[open]').forEach(d=>d.close()); break; } });
+document.addEventListener('DOMContentLoaded', () => { showToast('Page loaded! Press ? for shortcuts', 3000); if(typeof tippy!=='undefined') tippy('[title]',{animation:'scale'}); });
+</script>
 {% endblock %}
